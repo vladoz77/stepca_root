@@ -1,0 +1,54 @@
+# tasks/main.yaml
+- name: Check that step_ca_root_fingerprint is set
+  ansible.builtin.assert:
+    that: step_ca_root_fingerprint | length > 0
+    fail_msg: "Set step_ca_root_fingerprint"
+
+- name: Load variables for the current OS
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yaml"
+
+- name: Normalize the expected fingerprint
+  ansible.builtin.set_fact:
+    step_ca_root_fp_expected: "{{ step_ca_root_fingerprint | replace(':', '') | lower }}"
+
+- name: Download the step-ca root certificate
+  ansible.builtin.uri:
+    url: "{{ step_ca_root_url }}/root/{{ step_ca_root_fp_expected }}"
+    validate_certs: false   
+    return_content: true
+  register: step_ca_root_resp
+  check_mode: false
+
+- name: Extract the certificate from the response
+  ansible.builtin.set_fact:
+    step_ca_root: "{{ (step_ca_root_resp.content | from_json).ca | trim }}"
+
+- name: Get the fingerprint of the downloaded certificate
+  ansible.builtin.command: openssl x509 -noout -fingerprint -sha256
+  args:
+    stdin: "{{ step_ca_root }}"
+  register: step_ca_root_downloaded_raw
+  changed_when: false
+  check_mode: false
+
+- name: Normalize the fingerprint of the downloaded certificate
+  ansible.builtin.set_fact:
+    step_ca_root_fp_actual: >-
+      {{ step_ca_root_downloaded_raw.stdout | trim | split('=') | last
+         | replace(':', '') | lower }}
+
+- name: Check that the downloaded certificate matches the expected fingerprint
+  ansible.builtin.assert:
+    that: step_ca_root_fp_actual == step_ca_root_fp_expected
+    fail_msg: >-
+      Fingerprint mismatch: expected {{ step_ca_root_fp_expected }},
+      got {{ step_ca_root_fp_actual }}. The certificate is not installed.
+
+- name: Install certificate to the system
+  ansible.builtin.copy:
+    content: "{{ step_ca_root }}\n"
+    dest: "{{ step_ca_root_dest_dir }}/{{ step_ca_root_name }}.{{ step_ca_root_dest_ext }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: update trusted CA certificates

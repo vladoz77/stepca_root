@@ -1,0 +1,4 @@
+# defaults/main.yaml
+step_ca_root_name: step-ca-root
+step_ca_root_url: https://ca.int.devhomelab.site
+step_ca_root_fingerprint: ""

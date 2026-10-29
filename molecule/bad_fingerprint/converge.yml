@@ -1,0 +1,29 @@
+# molecule/default/converge.yml
+---
+- name: Converge
+  hosts: all:!stepca
+  gather_facts: true
+  vars:
+    step_ca_host: https://stepca:9000
+  tasks:
+    - name: Wait for step-ca to accept connections
+      ansible.builtin.wait_for:
+        host: stepca
+        port: 9000
+        timeout: 120
+
+    - name: Run the role with a wrong fingerprint
+      block:
+        - name: Role must fail
+          ansible.builtin.include_role:
+            name: "${MOLECULE_PROJECT_DIRECTORY}"
+          vars:
+            step_ca_root_url: "{{ step_ca_host }}"
+            step_ca_root_fingerprint: "{{ '0' * 64 }}"
+        - name: Role did not fail
+          ansible.builtin.fail:
+            msg: The role accepted a wrong fingerprint
+      rescue:
+        - name: Make sure we got here from the role, not from the fail above
+          ansible.builtin.assert:
+            that: "'accepted a wrong fingerprint' not in ansible_failed_result.msg | default('')"

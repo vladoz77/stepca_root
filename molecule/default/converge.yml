@@ -1,0 +1,30 @@
+# molecule/default/converge.yml
+---
+- name: Converge
+  hosts: all:!stepca
+  gather_facts: true
+  vars:
+    step_ca_host: https://stepca:9000
+    step_ca_container: stepca
+    step_ca_root_file: /home/step/certs/root_ca.crt
+  tasks:
+    - name: Wait for step-ca to accept connections
+      ansible.builtin.wait_for:
+        host: stepca
+        port: 9000
+        timeout: 120
+
+    - name: Get the root fingerprint from the CA
+      ansible.builtin.command:
+        cmd: "docker exec {{ step_ca_container }} step certificate fingerprint {{ step_ca_root_file }}"
+      delegate_to: localhost
+      connection: local
+      register: test_ca_fingerprint_raw
+      changed_when: false
+
+    - name: Run the step_ca_root role against the real step-ca
+      ansible.builtin.include_role:
+        name: "${MOLECULE_PROJECT_DIRECTORY}"
+      vars:
+        step_ca_root_url: "{{ step_ca_host }}"
+        step_ca_root_fingerprint: "{{ test_ca_fingerprint_raw.stdout | trim }}"

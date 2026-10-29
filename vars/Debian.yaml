@@ -1,0 +1,4 @@
+# vars/Debian.yaml
+step_ca_root_dest_dir: /usr/local/share/ca-certificates
+step_ca_root_dest_ext: crt
+step_ca_root_update_cmd: update-ca-certificates

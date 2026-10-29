@@ -1,0 +1,4 @@
+# vars/RedHat.yaml
+step_ca_root_dest_dir: /etc/pki/ca-trust/source/anchors
+step_ca_root_dest_ext: crt
+step_ca_root_update_cmd: update-ca-trust

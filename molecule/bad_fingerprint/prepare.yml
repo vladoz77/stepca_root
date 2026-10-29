@@ -1,0 +1,22 @@
+# molecule/default/prepare.yml
+---
+- name: Prepare
+  hosts: all:!stepca
+  gather_facts: true
+  tasks:
+    - name: Install test prerequisites (Debian)
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - openssl
+        state: present
+        update_cache: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install test prerequisites (RedHat)
+      ansible.builtin.dnf:
+        name:
+          - ca-certificates
+          - openssl
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'

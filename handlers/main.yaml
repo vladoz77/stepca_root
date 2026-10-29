@@ -1,0 +1,4 @@
+# handlers/main.yaml
+- name: update trusted CA certificates
+  ansible.builtin.command: "{{ step_ca_root_update_cmd }}"
+  changed_when: true

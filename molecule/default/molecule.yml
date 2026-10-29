@@ -1,0 +1,50 @@
+# molecule/default/molecule.yml
+---
+driver:
+  name: docker
+  docker_networks:
+    - name: stepca-net
+
+platforms:
+  - name: stepca
+    image: smallstep/step-ca:latest
+    pre_build_image: true
+    override_command: false
+    networks:
+      - name: stepca-net
+    env:
+      DOCKER_STEPCA_INIT_NAME: Molecule Test CA
+      DOCKER_STEPCA_INIT_DNS_NAMES: localhost,stepca
+      DOCKER_STEPCA_INIT_PASSWORD: molecule-insecure
+      DOCKER_STEPCA_INIT_DEPLOYMENT_TYPE: standalone
+  - name: debian12
+    image: geerlingguy/docker-debian12-ansible:latest
+    command: tail -f /dev/null
+    pre_build_image: true
+    networks:
+      - name: stepca-net
+  - name: rockylinux9
+    image: geerlingguy/docker-rockylinux9-ansible:latest
+    command: tail -f /dev/null
+    pre_build_image: true
+    networks:
+      - name: stepca-net
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: "${MOLECULE_PROJECT_DIRECTORY}/.."
+
+verifier:
+  name: ansible
+
+scenario:
+  test_sequence:
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

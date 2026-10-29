@@ -1,0 +1,17 @@
+# verify.yml
+---
+- name: Verify
+  hosts: all:!stepca
+  gather_facts: false
+  tasks:
+    - name: CA must NOT be trusted after the rejected run
+      ansible.builtin.uri:
+        url: https://stepca:9000/health
+        validate_certs: true
+      register: health
+      ignore_errors: true
+
+    - name: Assert the TLS check failed
+      ansible.builtin.assert:
+        that: health is failed
+        fail_msg: The system trusts the CA although the role rejected the fingerprint

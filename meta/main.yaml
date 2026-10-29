@@ -1,0 +1,8 @@
+# meta/main.yaml
+galaxy_info:
+  author: vladoz77
+  description: Install stepca certificate authority
+  license: MIT
+  min_ansible_version: "2.15"
+
+dependencies: []
